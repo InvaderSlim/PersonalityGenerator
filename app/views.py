@@ -12,8 +12,16 @@ from werkzeug.utils import secure_filename
 
 from .forms import UploadForm
 import pickle
+import pandas as pd
 
-Conscientiousness = pickle.load(open('models/Conscientiousness.pkl', 'rb'))
+
+conscientiousness = pickle.load(open('models/Conscientiousness.pkl', 'rb'))
+agree = pickle.load(open('models/agreeableness.pkl', 'rb'))
+emotional = pickle.load(open('models/emotionalStability.pkl', 'rb'))
+extraversion = pickle.load(open('models/extraversion.pkl', 'rb'))
+intellect = pickle.load(open('models/intellectImagination.pkl', 'rb'))
+
+
 
 ###
 # Routing for your application.
@@ -41,19 +49,35 @@ def upload():
     # if request.method == 'POST':
         # Get file data and save to your uploads folder
         cf = form.upload.data
-        filename = secure_filename(cf.filename)
+        # filename = secure_filename(cf.filename)
+
+        data = pd.read_csv(cf)
+        X = data.drop(labels=["Extraversion","Emotional_Stability","Conscientiousness","Intellect_Imagination"], axis=1)
         
+        pred_consc = conscientiousness.predict(X)
+        pred_agree = agree.predict(X)
+        pred_emotion = emotional.predict(X)
+        pred_extra = extraversion.predict(X)
+        pred_intellect = intellect.predict(X)
+
         # if filename != '':
         #     file_ext = os.path.splitext(filename)[1]
         #     if file_ext not in app.config['ALLOWED_EXTENSIONS']:
         #         flash('Invalid format, try again')
         
-        cf.save(os.path.join( 
-            root_dir, app.config['UPLOAD_FOLDER'], filename
-        ))
-        flash('File Saved', 'success')
-        return redirect(url_for('home'))
-    
+        # cf.save(os.path.join( 
+        #     root_dir, app.config['UPLOAD_FOLDER'], filename
+        # ))
+        flash('Successful', 'success')
+        # return redirect(url_for('home'))
+        return render_template('home.html',
+         pred_data_c = 'Predicted Conscientiousness is {}'.format(pred_consc),
+          pred_data_a = 'Predicted Agreeableness is {}'.format(pred_agree),
+          pred_data_em = 'Predicted Emotional Stability is {}'.format(pred_emotion),
+          pred_data_ex = 'Predicted Extraversion is {}'.format(pred_extra),
+          pred_data_i = 'Predicted Intellect Imagination is {}'.format(pred_intellect)
+          )          
+
     if request.method == 'GET':
         return render_template('upload.html', form=form)
 
