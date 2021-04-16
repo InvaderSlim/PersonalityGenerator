@@ -5,10 +5,15 @@ Werkzeug Documentation:  http://werkzeug.pocoo.org/documentation/
 This file creates your application.
 """
 
+import os
 from app import app
-from flask import render_template, request, redirect, url_for
+from flask import render_template, request, redirect, url_for, flash
+from werkzeug.utils import secure_filename
+
+from .forms import UploadForm
 import pickle
 
+Conscientiousness = pickle.load(open('models/Conscientiousness.pkl', 'rb'))
 
 ###
 # Routing for your application.
@@ -24,6 +29,37 @@ def home():
 def about():
     """Render the website's about page."""
     return render_template('about.html', name="Mary Jane")
+
+@app.route('/upload', methods=['POST', 'GET'])
+def upload():
+    root_dir = os.getcwd()
+    # Instantiate your form class
+    form = UploadForm()
+
+    # Validate file upload on submit
+    if request.method == 'POST' and form.validate_on_submit():
+    # if request.method == 'POST':
+        # Get file data and save to your uploads folder
+        cf = form.upload.data
+        filename = secure_filename(cf.filename)
+        
+        # if filename != '':
+        #     file_ext = os.path.splitext(filename)[1]
+        #     if file_ext not in app.config['ALLOWED_EXTENSIONS']:
+        #         flash('Invalid format, try again')
+        
+        cf.save(os.path.join( 
+            root_dir, app.config['UPLOAD_FOLDER'], filename
+        ))
+        flash('File Saved', 'success')
+        return redirect(url_for('home'))
+    
+    if request.method == 'GET':
+        return render_template('upload.html', form=form)
+
+    return render_template('upload.html', 
+        form=form,
+        template="form-template")
 
 
 ###
